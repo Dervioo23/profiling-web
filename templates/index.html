@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Profiling System — Laporan Otomatis</title>
+  <meta name="description" content="Sistem profiling otomatis untuk laporan dealer inbound dan outbound. Upload data, atur periode, dan download hasil Excel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<!-- ========= HEADER ========= -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-icon">📊</div>
+      <div>
+        <h1 class="brand-title">Profiling System</h1>
+        <p class="brand-sub">Laporan Dealer Otomatis</p>
+      </div>
+    </div>
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      <span>Lokal · Siap Pakai</span>
+    </div>
+  </div>
+</header>
+
+<!-- ========= MAIN ========= -->
+<main class="main-container">
+
+  <!-- CARD FORM -->
+  <section class="card form-card" id="form-section">
+    <div class="card-header">
+      <h2 class="card-title">Konfigurasi Laporan</h2>
+      <p class="card-desc">Pilih jenis laporan, atur periode, dan upload data kotor Anda.</p>
+    </div>
+
+    <form id="form-proses" enctype="multipart/form-data" novalidate>
+
+      <!-- Step 1: Pilih Jenis -->
+      <div class="form-step" id="step-1">
+        <div class="step-label">
+          <span class="step-num">1</span>
+          <span>Pilih Jenis Laporan</span>
+        </div>
+        <div class="select-wrapper">
+          <select id="jenis" name="jenis" class="select-input" required>
+            <option value="" disabled selected>-- Pilih Jenis Laporan --</option>
+            <option value="homi">📱 Inbound — HOMi (Mobile App)</option>
+            <option value="website">🌐 Inbound — Website</option>
+            <option value="outbound">📞 Outbound</option>
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- Step 2: Periode -->
+      <div class="form-step hidden" id="step-2">
+        <div class="step-label">
+          <span class="step-num">2</span>
+          <span>Atur Periode</span>
+        </div>
+        <div class="periode-row">
+          <div class="input-group">
+            <label for="bulan">Bulan</label>
+            <select id="bulan" name="bulan" class="select-input" required>
+              <option value="" disabled selected>Pilih Bulan</option>
+              <option>Januari</option><option>Februari</option><option>Maret</option>
+              <option>April</option><option>Mei</option><option>Juni</option>
+              <option>Juli</option><option>Agustus</option><option>September</option>
+              <option>Oktober</option><option>November</option><option>Desember</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="tahun">Tahun</label>
+            <input type="number" id="tahun" name="tahun" class="text-input"
+                   min="2020" max="2099" placeholder="2026" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload -->
+      <div class="form-step hidden" id="step-3">
+        <div class="step-label">
+          <span class="step-num">3</span>
+          <span>Upload File</span>
+        </div>
+
+        <!-- Upload area: Data Kotor -->
+        <div class="upload-area" id="upload-data-area">
+          <input type="file" id="file_data" name="file_data"
+                 accept=".xlsx,.xls" class="file-input" required />
+          <label for="file_data" class="upload-label">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">
+              <span class="upload-main" id="data-label-main">Klik untuk upload Data Kotor</span>
+              <span class="upload-sub">Format: .xlsx / .xls</span>
+            </div>
+          </label>
+          <div class="file-chosen hidden" id="data-chosen">
+            <span class="file-icon">✅</span>
+            <span id="data-chosen-name">—</span>
+          </div>
+        </div>
+
+        <!-- Upload area: Sales (hanya outbound) -->
+        <div id="upload-sales-wrap" class="hidden">
+          <div class="upload-area mt-12" id="upload-sales-area">
+            <input type="file" id="file_sales" name="file_sales"
+                   accept=".xlsx,.xls" class="file-input" />
+            <label for="file_sales" class="upload-label">
+              <div class="upload-icon">💰</div>
+              <div class="upload-text">
+                <span class="upload-main">Klik untuk upload Data Sales</span>
+                <span class="upload-sub">Format: .xlsx / .xls</span>
+              </div>
+            </label>
+            <div class="file-chosen hidden" id="sales-chosen">
+              <span class="file-icon">✅</span>
+              <span id="sales-chosen-name">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tombol Proses -->
+      <div class="form-step hidden" id="step-4">
+        <button type="submit" class="btn-proses" id="btn-proses">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-text">Proses Laporan</span>
+        </button>
+      </div>
+
+    </form>
+  </section>
+
+  <!-- LOADING -->
+  <div class="loading-overlay hidden" id="loading">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p class="loading-text">Memproses data...<br/><small>Mohon tunggu sebentar</small></p>
+    </div>
+  </div>
+
+  <!-- HASIL / PREVIEW -->
+  <section class="card result-card hidden" id="result-section">
+    <div class="result-header">
+      <div>
+        <h2 class="card-title">Preview Hasil</h2>
+        <p class="result-filename" id="result-filename">—</p>
+      </div>
+      <button class="btn-download" id="btn-download">
+        <span>⬇</span> Download Excel
+      </button>
+    </div>
+    <div class="result-stats" id="result-stats"></div>
+    <div class="table-wrapper">
+      <table id="preview-table">
+        <thead id="preview-thead"></thead>
+        <tbody id="preview-tbody"></tbody>
+      </table>
+    </div>
+    <div class="result-footer">
+      <button class="btn-ulang" id="btn-ulang">🔄 Proses Laporan Lain</button>
+    </div>
+  </section>
+
+  <!-- ERROR -->
+  <div class="error-card hidden" id="error-section">
+    <div class="error-icon">⚠️</div>
+    <div class="error-content">
+      <h3>Terjadi Kesalahan</h3>
+      <p id="error-msg">—</p>
+    </div>
+    <button class="btn-ulang small" id="btn-ulang-err">Coba Lagi</button>
+  </div>
+
+</main>
+
+<!-- ========= FOOTER ========= -->
+<footer class="site-footer">
+  <p>Profiling System · Laporan Dealer Inbound &amp; Outbound</p>
+</footer>
+
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>
