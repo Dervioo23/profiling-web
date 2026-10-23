@@ -19,6 +19,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/motion")
+def motion():
+    return render_template("motion.html")
+
+
 @app.route("/api/inspect-sheets", methods=["POST"])
 def inspect_sheets():
     file = request.files.get("file")
