@@ -275,6 +275,23 @@ body {
 /* ---------- Sheet Select Dropdown ---------- */
 .sheet-select-wrap {
   margin-top: 10px;
+  animation: fadeDown 0.25s ease;
+}
+
+.sheet-single-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.sheet-multi-wrap {
   padding: 12px 14px;
   background: #f1f5f9;
   border: 1px solid var(--border);
@@ -282,7 +299,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  animation: fadeDown 0.25s ease;
 }
 
 .sheet-select-label {

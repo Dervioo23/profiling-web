@@ -17,12 +17,16 @@
   const fileDataChosen = document.getElementById("data-chosen");
   const fileDataName   = document.getElementById("data-chosen-name");
   const sheetDataWrap  = document.getElementById("sheet-data-wrap");
+  const sheetDataSingle= document.getElementById("sheet-data-single");
+  const sheetDataMulti = document.getElementById("sheet-data-multi");
   const sheetDataSelect= document.getElementById("sheet_data");
 
   const fileSalesInput = document.getElementById("file_sales");
   const fileSalesChosen= document.getElementById("sales-chosen");
   const fileSalesName  = document.getElementById("sales-chosen-name");
   const sheetSalesWrap = document.getElementById("sheet-sales-wrap");
+  const sheetSalesSingle= document.getElementById("sheet-sales-single");
+  const sheetSalesMulti= document.getElementById("sheet-sales-multi");
   const sheetSalesSelect= document.getElementById("sheet_sales");
 
   const formProses     = document.getElementById("form-proses");
@@ -105,14 +109,20 @@
     fileSalesChosen.classList.add("hidden");
     sheetDataWrap.classList.add("hidden");
     sheetSalesWrap.classList.add("hidden");
+    sheetDataSingle.classList.add("hidden");
+    sheetDataMulti.classList.add("hidden");
+    sheetSalesSingle.classList.add("hidden");
+    sheetSalesMulti.classList.add("hidden");
     sheetDataSelect.innerHTML = "";
     sheetSalesSelect.innerHTML = "";
   }
 
   // ── Inspeksi Sheet Excel ─────────────────────────────────
-  async function inspectSheets(file, selectElem, wrapElem, isSales) {
+  async function inspectSheets(file, selectElem, wrapElem, singleElem, multiElem, isSales) {
     if (!file) {
       wrapElem.classList.add("hidden");
+      singleElem.classList.add("hidden");
+      multiElem.classList.add("hidden");
       selectElem.innerHTML = "";
       return;
     }
@@ -126,14 +136,21 @@
         return;
       }
       const sheets = data.sheets;
+      wrapElem.classList.remove("hidden");
+
       if (sheets.length <= 1) {
-        // Hanya 1 sheet, otomatis terpilih tanpa perlu dropdown
-        wrapElem.classList.add("hidden");
-        selectElem.innerHTML = sheets.length ? `<option value="${sheets[0]}" selected>${sheets[0]}</option>` : "";
+        // Hanya 1 sheet -> tampilkan notif "Sheet Bernama X Berhasil dibaca"
+        const sheetName = sheets[0] || "Sheet1";
+        singleElem.innerHTML = `<span>✅</span> Sheet bernama <strong>"${sheetName}"</strong> berhasil dibaca.`;
+        singleElem.classList.remove("hidden");
+        multiElem.classList.add("hidden");
+        selectElem.innerHTML = `<option value="${sheetName}" selected>${sheetName}</option>`;
         return;
       }
 
-      // Lebih dari 1 sheet -> tampilkan dropdown
+      // Lebih dari 1 sheet -> tampilkan pilihan dropdown
+      singleElem.classList.add("hidden");
+      multiElem.classList.remove("hidden");
       selectElem.innerHTML = "";
       const bulan = (document.getElementById("bulan").value || "").toLowerCase();
 
@@ -160,8 +177,6 @@
       if (matchedIndex >= 0) {
         selectElem.selectedIndex = matchedIndex;
       }
-
-      wrapElem.classList.remove("hidden");
     } catch (e) {
       console.warn("Gagal membaca sheets:", e);
       wrapElem.classList.add("hidden");
@@ -173,7 +188,7 @@
     if (this.files.length) {
       fileDataName.textContent = this.files[0].name;
       fileDataChosen.classList.remove("hidden");
-      inspectSheets(this.files[0], sheetDataSelect, sheetDataWrap, false);
+      inspectSheets(this.files[0], sheetDataSelect, sheetDataWrap, sheetDataSingle, sheetDataMulti, false);
     } else {
       sheetDataWrap.classList.add("hidden");
     }
@@ -183,7 +198,7 @@
     if (this.files.length) {
       fileSalesName.textContent = this.files[0].name;
       fileSalesChosen.classList.remove("hidden");
-      inspectSheets(this.files[0], sheetSalesSelect, sheetSalesWrap, true);
+      inspectSheets(this.files[0], sheetSalesSelect, sheetSalesWrap, sheetSalesSingle, sheetSalesMulti, true);
     } else {
       sheetSalesWrap.classList.add("hidden");
     }
