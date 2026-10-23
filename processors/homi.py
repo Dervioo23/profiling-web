@@ -254,12 +254,13 @@ def _build_excel(profiling, bulan, tahun):
     return buf.getvalue()
 
 
-def process(file_bytes, bulan, tahun):
+def process(file_bytes, bulan, tahun, sheet_name=None):
     """
     Proses data HOMi dari bytes file Excel.
     Returns: (profiling DataFrame, excel_bytes, filename)
     """
-    df_raw = pd.read_excel(io.BytesIO(file_bytes), header=None)
+    s_name = sheet_name if sheet_name else 0
+    df_raw = pd.read_excel(io.BytesIO(file_bytes), sheet_name=s_name, header=None)
     data = _parse_header(df_raw)
     data_clean, kolom_md = _clean_data(data)
     profiling = _aggregate(data_clean, kolom_md)

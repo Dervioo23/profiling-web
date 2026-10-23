@@ -16,10 +16,14 @@
   const fileDataInput  = document.getElementById("file_data");
   const fileDataChosen = document.getElementById("data-chosen");
   const fileDataName   = document.getElementById("data-chosen-name");
+  const sheetDataWrap  = document.getElementById("sheet-data-wrap");
+  const sheetDataSelect= document.getElementById("sheet_data");
 
   const fileSalesInput = document.getElementById("file_sales");
   const fileSalesChosen= document.getElementById("sales-chosen");
   const fileSalesName  = document.getElementById("sales-chosen-name");
+  const sheetSalesWrap = document.getElementById("sheet-sales-wrap");
+  const sheetSalesSelect= document.getElementById("sheet_sales");
 
   const formProses     = document.getElementById("form-proses");
   const btnProses      = document.getElementById("btn-proses");
@@ -99,13 +103,79 @@
     fileSalesInput.value = "";
     fileDataChosen.classList.add("hidden");
     fileSalesChosen.classList.add("hidden");
+    sheetDataWrap.classList.add("hidden");
+    sheetSalesWrap.classList.add("hidden");
+    sheetDataSelect.innerHTML = "";
+    sheetSalesSelect.innerHTML = "";
   }
 
-  // ── File chosen indicator ────────────────────────────────
+  // ── Inspeksi Sheet Excel ─────────────────────────────────
+  async function inspectSheets(file, selectElem, wrapElem, isSales) {
+    if (!file) {
+      wrapElem.classList.add("hidden");
+      selectElem.innerHTML = "";
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/inspect-sheets", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.sheets) {
+        wrapElem.classList.add("hidden");
+        return;
+      }
+      const sheets = data.sheets;
+      if (sheets.length <= 1) {
+        // Hanya 1 sheet, otomatis terpilih tanpa perlu dropdown
+        wrapElem.classList.add("hidden");
+        selectElem.innerHTML = sheets.length ? `<option value="${sheets[0]}" selected>${sheets[0]}</option>` : "";
+        return;
+      }
+
+      // Lebih dari 1 sheet -> tampilkan dropdown
+      selectElem.innerHTML = "";
+      const bulan = (document.getElementById("bulan").value || "").toLowerCase();
+
+      if (isSales) {
+        const optAll = document.createElement("option");
+        optAll.value = "__ALL__";
+        optAll.textContent = `📊 Gabungkan Semua Sheet (${sheets.length} Sheet)`;
+        selectElem.appendChild(optAll);
+      }
+
+      let matchedIndex = -1;
+      sheets.forEach((s, idx) => {
+        const opt = document.createElement("option");
+        opt.value = s;
+        opt.textContent = isSales ? `Hanya Sheet: ${s}` : `Sheet: ${s}`;
+        const sLower = s.toLowerCase();
+        if (bulan && (sLower.includes(bulan.slice(0, 3)) || bulan.includes(sLower))) {
+          matchedIndex = isSales ? idx + 1 : idx; // offset 1 if __ALL__ is first
+        }
+        selectElem.appendChild(opt);
+      });
+
+      // Otomatis pilih sheet yang cocok dengan bulan jika ada
+      if (matchedIndex >= 0) {
+        selectElem.selectedIndex = matchedIndex;
+      }
+
+      wrapElem.classList.remove("hidden");
+    } catch (e) {
+      console.warn("Gagal membaca sheets:", e);
+      wrapElem.classList.add("hidden");
+    }
+  }
+
+  // ── File chosen indicator & sheet inspection ─────────────
   fileDataInput.addEventListener("change", function () {
     if (this.files.length) {
       fileDataName.textContent = this.files[0].name;
       fileDataChosen.classList.remove("hidden");
+      inspectSheets(this.files[0], sheetDataSelect, sheetDataWrap, false);
+    } else {
+      sheetDataWrap.classList.add("hidden");
     }
   });
 
@@ -113,6 +183,9 @@
     if (this.files.length) {
       fileSalesName.textContent = this.files[0].name;
       fileSalesChosen.classList.remove("hidden");
+      inspectSheets(this.files[0], sheetSalesSelect, sheetSalesWrap, true);
+    } else {
+      sheetSalesWrap.classList.add("hidden");
     }
   });
 

@@ -1,7 +1,6 @@
-"""
-Flask Backend - Profiling System
-"""
+import io
 import base64
+import openpyxl
 from flask import Flask, render_template, request, jsonify
 
 from processors import homi, website, outbound
@@ -20,12 +19,28 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/api/inspect-sheets", methods=["POST"])
+def inspect_sheets():
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"success": False, "error": "File tidak ditemukan."}), 400
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file.read()), read_only=True)
+        sheets = wb.sheetnames
+        wb.close()
+        return jsonify({"success": True, "sheets": sheets})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
 @app.route("/api/proses", methods=["POST"])
 def proses():
     try:
         jenis = request.form.get("jenis", "")
         bulan = request.form.get("bulan", "")
         tahun = request.form.get("tahun", "")
+        sheet_data = request.form.get("sheet_data", "").strip() or None
+        sheet_sales = request.form.get("sheet_sales", "").strip() or None
 
         if not jenis or not bulan or not tahun:
             return jsonify({"error": "Jenis, Bulan, dan Tahun wajib diisi."}), 400
@@ -37,7 +52,9 @@ def proses():
             if not file:
                 return jsonify({"error": "File Data HOMi wajib diupload."}), 400
             file_bytes = file.read()
-            preview_rows, excel_bytes, filename = homi.process(file_bytes, bulan, tahun)
+            preview_rows, excel_bytes, filename = homi.process(
+                file_bytes, bulan, tahun, sheet_name=sheet_data
+            )
             kolom_labels = [
                 "Bulan", "Tahun", "Nama Dealer", "Total Leads",
                 "KACAB Belum FU", "KACAB %",
@@ -51,7 +68,9 @@ def proses():
             if not file:
                 return jsonify({"error": "File Data Website wajib diupload."}), 400
             file_bytes = file.read()
-            preview_rows, excel_bytes, filename = website.process(file_bytes, bulan, tahun)
+            preview_rows, excel_bytes, filename = website.process(
+                file_bytes, bulan, tahun, sheet_name=sheet_data
+            )
             kolom_labels = [
                 "Bulan", "Tahun", "Nama Dealer", "Total Leads",
                 "KACAB Belum FU", "KACAB %",
@@ -67,7 +86,10 @@ def proses():
                 return jsonify({"error": "File Data Outbound dan File Sales wajib diupload."}), 400
             file_bytes  = file_data.read()
             sales_bytes = file_sales.read()
-            preview_rows, excel_bytes, filename = outbound.process(file_bytes, sales_bytes, bulan, tahun)
+            preview_rows, excel_bytes, filename = outbound.process(
+                file_bytes, sales_bytes, bulan, tahun,
+                sheet_data=sheet_data, sheet_sales=sheet_sales
+            )
             kolom_labels = [
                 "Bulan", "Tahun", "Nama Dealer", "Total Leads",
                 "KACAB Belum FU", "KACAB %",

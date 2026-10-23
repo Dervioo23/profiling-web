@@ -85,9 +85,19 @@ def _aggregate(data_clean, kolom_prof):
     return profiling
 
 
-def _get_sales(df_sales_bytes):
+def _get_sales(df_sales_bytes, sheet_sales=None):
     """Baca file sales, kembalikan dict {DEALER_UPPER: SALES}."""
-    df_sales = pd.read_excel(io.BytesIO(df_sales_bytes), header=0)
+    if sheet_sales == "__ALL__":
+        all_sheets = pd.read_excel(io.BytesIO(df_sales_bytes), sheet_name=None, header=0)
+        df_list = [s_df for s_df in all_sheets.values() if not s_df.empty]
+        if not df_list:
+            return {}
+        df_sales = pd.concat(df_list, ignore_index=True)
+    elif sheet_sales:
+        df_sales = pd.read_excel(io.BytesIO(df_sales_bytes), sheet_name=sheet_sales, header=0)
+    else:
+        df_sales = pd.read_excel(io.BytesIO(df_sales_bytes), sheet_name=0, header=0)
+
     cols_upper = {str(c).strip().upper(): c for c in df_sales.columns}
     # Prioritaskan nama kolom persis seperti di notebook: DEALER & SALES
     dealer_col = cols_upper.get("DEALER")
@@ -201,12 +211,13 @@ def _build_excel(profiling, bulan, tahun, sales_dict):
     return buf.getvalue()
 
 
-def process(file_bytes, sales_bytes, bulan, tahun):
-    df_raw     = pd.read_excel(io.BytesIO(file_bytes), header=None)
+def process(file_bytes, sales_bytes, bulan, tahun, sheet_data=None, sheet_sales=None):
+    s_data = sheet_data if sheet_data else 0
+    df_raw = pd.read_excel(io.BytesIO(file_bytes), sheet_name=s_data, header=None)
     data       = _parse_header(df_raw)
     data_clean, kolom_prof = _clean_data(data)
     profiling  = _aggregate(data_clean, kolom_prof)
-    sales_dict = _get_sales(sales_bytes) if sales_bytes else {}
+    sales_dict = _get_sales(sales_bytes, sheet_sales=sheet_sales) if sales_bytes else {}
     excel_bytes= _build_excel(profiling, bulan, tahun, sales_dict)
     filename   = f"Outbound_{bulan}_{tahun}.xlsx"
 
